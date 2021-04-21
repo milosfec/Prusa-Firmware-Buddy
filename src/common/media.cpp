@@ -68,7 +68,8 @@ static uint32_t media_gcode_position = 0;   // Beginning of the current G-Code
 static uint32_t media_queue_position[BUFSIZE];
 
 char getByte(GCodeFilter::State *state);
-static GCodeFilter gcode_filter(&getByte, MAX_CMD_SIZE);
+static char gcode_buffer[MAX_CMD_SIZE + 1]; // + 1 for NULL char
+static GCodeFilter gcode_filter(&getByte, gcode_buffer, sizeof(gcode_buffer));
 static uint32_t media_loop_read = 0;
 static const constexpr uint32_t MEDIA_LOOP_MAX_READ = 4096;
 

@@ -42,6 +42,8 @@ static const std::vector<const char *> expected_gcode = {
 
 static const size_t gcode_size = sizeof(input_gcode);
 
+char buffer[MAX_CMD_SIZE + 1];
+
 unsigned int processed_chars = 0;
 unsigned int previous_processed_chars = 0;
 unsigned int loop_read = 0;
@@ -62,7 +64,7 @@ char getByte(GCodeFilter::State *state) {
 
 TEST_CASE("gcode-filter", "") {
     unsigned int gcode_index = 0;
-    GCodeFilter gcode_filter(&getByte, MAX_CMD_SIZE);
+    GCodeFilter gcode_filter(&getByte, buffer, sizeof(buffer));
     GCodeFilter::State state;
     for (char *gcode = gcode_filter.nextGcode(&state);
          state != GCodeFilter::State::Error;

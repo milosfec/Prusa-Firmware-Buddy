@@ -52,7 +52,7 @@ char *GCodeFilter::nextGcode(State *state) {
         // Add new char to the buffer
         buffer[offset++] = nextByte;
 
-        if (offset == max_cmd_size) {
+        if (offset == buffer_size - 1) {
             // Too long line, return what we have and continue to the next line
             wait_new_line = true;
             RETURN_GCODE;

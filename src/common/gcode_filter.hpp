@@ -21,14 +21,10 @@ public:
         Skip // Skip current processing to unlock the loop
     };
 
-    GCodeFilter(char (*getByte)(State *), size_t max_cmd_size)
+    GCodeFilter(char (*getByte)(State *), char *buffer, size_t buffer_size)
         : getByte(getByte)
-        , max_cmd_size(max_cmd_size)
-        , buffer(new char[max_cmd_size + 1]) {}
-
-    ~GCodeFilter() {
-        delete[] buffer;
-    }
+        , buffer(buffer)
+        , buffer_size(buffer_size) {}
 
     /// Returns next gcode with a corresponding state.
     ///
@@ -51,8 +47,8 @@ private:
     /// Prepares G-Code in the buffer for returning to the client.
     char *prepareGcode();
 
-    const size_t max_cmd_size;
     char *buffer;
+    const size_t buffer_size;
     size_t offset = 0;
     bool wait_new_line = false;
 };
