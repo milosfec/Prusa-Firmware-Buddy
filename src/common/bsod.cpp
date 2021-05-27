@@ -485,9 +485,9 @@ extern "C" void vApplicationStackOverflowHook(TaskHandle_t xTask, signed char *p
     tsk_hndl = xTask;
     tsk_name = pcTaskName;
     if (pcTaskName != nullptr && strlen((const char *)pcTaskName) < 20)
-        _bsod("STACK OVERFLOW\nHANDLE %p\n%s", 0, 0, xTask, pcTaskName);
+        bsod("STACK OVERFLOW\nHANDLE %p\n%s", 0, 0, xTask, pcTaskName);
     else
-        _bsod("STACK OVERFLOW\nHANDLE %p\nTaskname ERROR", 0, 0, xTask);
+        bsod("STACK OVERFLOW\nHANDLE %p\nTaskname ERROR", 0, 0, xTask);
 }
 
     #endif //configCHECK_FOR_STACK_OVERFLOW

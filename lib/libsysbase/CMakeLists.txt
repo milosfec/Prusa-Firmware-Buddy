@@ -1,6 +1,5 @@
 add_library(
   sysbase
-  open.c
   dirent.c
   iosupport.c
   )

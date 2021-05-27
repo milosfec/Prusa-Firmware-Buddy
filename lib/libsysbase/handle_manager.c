@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <sys/lock.h>
 #include <sys/iosupport.h>
 
-#define MAX_HANDLES 1024
+#define MAX_HANDLES 16
 
 static __handle __stdin_handle  = {0, 1, NULL};
 static __handle __stdout_handle = {1, 1, NULL};
@@ -19,7 +20,7 @@ static __handle* handles[MAX_HANDLES] = {
 	&__stderr_handle
 };
 
-__LOCK_INIT(static, __hndl_lock);
+//__LOCK_INIT(static, __hndl_lock);
 
 static void __free_handle(__handle *handle) {
 
@@ -38,12 +39,12 @@ void __release_handle(int fd) {
 
 	if ( fd <0 || fd >= MAX_HANDLES ) return;
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 
 	__free_handle(handles[fd]);
 	handles[fd] = NULL;
 
-	__lock_release (__hndl_lock);
+	//__lock_release (__hndl_lock);
 
 }
 
@@ -51,7 +52,7 @@ int __alloc_handle(int device) {
 
 	int i, ret = -1;
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 
 	for ( i = 0; i < MAX_HANDLES; i++ ) {
 		if ( handles[i] == NULL ) break;
@@ -80,7 +81,7 @@ int __alloc_handle(int device) {
 
 	}
 
-	__lock_release (__hndl_lock);
+	//__lock_release (__hndl_lock);
 
 	return ret;
 }
@@ -89,9 +90,9 @@ __handle *__get_handle(int fd) {
 
 	if ( fd < 0 || fd >= MAX_HANDLES ) return NULL;
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 	__handle *handle = handles[fd];
-	__lock_release (__hndl_lock);
+	//__lock_release (__hndl_lock);
 
 	return handle;
 }
@@ -99,10 +100,10 @@ __handle *__get_handle(int fd) {
 int dup(int oldfd) {
 	int i, ret =-1;
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 
 	if (handles[oldfd]==NULL) {
-		__lock_release (__hndl_lock);
+		//__lock_release (__hndl_lock);
 		errno = EBADF;
 		return -1;
 	}
@@ -117,7 +118,7 @@ int dup(int oldfd) {
 		handles[oldfd]->refcount++;
 		ret = i;
 	}
-	__lock_release (__hndl_lock);
+	//__lock_release (__hndl_lock);
 
 	return ret;
 
@@ -137,10 +138,10 @@ int dup2(int oldfd, int newfd) {
 		return newfd;
 	}
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 
 	if ( handles[oldfd] == NULL ) {
-		__lock_release (__hndl_lock);
+		//__lock_release (__hndl_lock);
 		errno = EBADF;
 
 		return -1;
@@ -154,7 +155,7 @@ int dup2(int oldfd, int newfd) {
 	if ( handle ) {
 
 		int ref = --handle->refcount;
-		__lock_release (__hndl_lock);
+		//__lock_release (__hndl_lock);
 
 		if ( ref == 0 ) {
 
@@ -170,7 +171,7 @@ int dup2(int oldfd, int newfd) {
 
 	} else {
 
-		__lock_release (__hndl_lock);
+		//__lock_release (__hndl_lock);
 
 	}
 
@@ -196,13 +197,13 @@ int _close(int fd) {
 
 	}
 
-	__lock_acquire (__hndl_lock);
+	//__lock_acquire (__hndl_lock);
 
 	__handle *handle = handles[fd];
 
 	if ( !handle ) {
 
-		__lock_release (__hndl_lock);
+		//__lock_release (__hndl_lock);
 		ptr->_errno = EBADF;
 		return -1;
 
@@ -211,7 +212,7 @@ int _close(int fd) {
 	int ref = --handle->refcount;
 	handles[fd] = NULL;
 
-	__lock_release (__hndl_lock);
+	//__lock_release (__hndl_lock);
 
 	if ( ref == 0 ) {
 

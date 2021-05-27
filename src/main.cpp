@@ -67,6 +67,7 @@
 #include "eeprom.h"
 #include "crc32.h"
 #include "w25x.h"
+#include "filesystem_fatfs.h"
 
 #define USB_OVERC_Pin       GPIO_PIN_4
 #define USB_OVERC_GPIO_Port GPIOE
@@ -287,6 +288,8 @@ int main(void) {
     if (irq == 0)
         __disable_irq();
 
+    filesystem_fatfs_init();
+
     /* USER CODE END 2 */
 
     static metric_handler_t *handlers[] = {
@@ -308,7 +311,7 @@ int main(void) {
 
     /* Create the thread(s) */
     /* definition and creation of defaultTask */
-    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
+    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 2048);
     defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
     /* definition and creation of displayTask */

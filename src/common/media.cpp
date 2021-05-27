@@ -8,6 +8,11 @@
 #include <algorithm>
 #include "marlin_server.hpp"
 #include "gcode_filter.hpp"
+#include <chrono>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include "dirtest.h"
 
 #ifdef REENUMERATE_USB
 
@@ -169,6 +174,53 @@ private:
     int result;
 };
 
+bool testReadPerByte() {
+    char byte;
+    UINT bytes_read = 0;
+    for (int i = 0; i < 512; i++) {
+        if (f_read(&media_print_fil, &byte, 1, &bytes_read) != FR_OK || bytes_read != 1) {
+            SERIAL_ECHOLN("BYTE READ ERR!");
+            return false;
+        }
+    }
+    if (f_lseek(&media_print_fil, 0) != FR_OK) {
+        SERIAL_ECHOLN("BYTE SEEK ERR!");
+        return false;
+    }
+    return true;
+}
+
+bool testReadPerBlock() {
+    char block[512];
+    UINT bytes_read = 0;
+    if (f_read(&media_print_fil, block, 512, &bytes_read) != FR_OK || bytes_read != 512) {
+        SERIAL_ECHOLN("BLOCK READ ERR!");
+        return false;
+    }
+    if (f_lseek(&media_print_fil, 0) != FR_OK) {
+        SERIAL_ECHOLN("BLOCK SEEK ERR!");
+        return false;
+    }
+    return true;
+}
+
+void testReadSpeed() {
+    uint32_t start = HAL_GetTick();
+    for (int i = 0; i < 10000; i++) {
+        if (!testReadPerByte()) {
+            return;
+        }
+    }
+    SERIAL_ECHOLNPAIR("BYTE PROCESS TIME: ", HAL_GetTick() - start);
+    start = HAL_GetTick();
+    for (int i = 0; i < 10000; i++) {
+        if (!testReadPerBlock()) {
+            return;
+        }
+    }
+    SERIAL_ECHOLNPAIR("BLOCK PROCESS TIME: ", HAL_GetTick() - start);
+}
+
 void media_print_start(const char *sfnFilePath) {
     if (media_print_state == media_print_state_NONE) {
         if (sfnFilePath) // null sfnFilePath means use current filename media_print_SFN_path
@@ -182,11 +234,12 @@ void media_print_start(const char *sfnFilePath) {
         if (fo.Success()) {
             strlcpy(media_print_LFN, fo.LFName(), sizeof(media_print_LFN));
             media_print_size = fo.FSize(); //filinfo.fsize;
+
+            dir_test();
+
             if (f_open(&media_print_fil, media_print_SFN_path, FA_READ) == FR_OK) {
                 media_gcode_position = media_current_position = 0;
                 media_print_state = media_print_state_PRINTING;
-            } else {
-                set_warning(WarningType::USBFlashDiskError);
             }
         }
     }
@@ -207,6 +260,8 @@ void media_print_stop(void) {
 void media_print_pause(void) {
     if (media_print_state == media_print_state_PRINTING) {
         media_print_state = media_print_state_PAUSING;
+
+        dummy();
     }
 }
 

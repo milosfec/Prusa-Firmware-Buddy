@@ -467,7 +467,7 @@ target_link_libraries(
           QR
           Buddy::Lang
           printf::printf
-          libsysbase
+          sysbase
   )
 
 target_sources(
@@ -486,6 +486,8 @@ target_sources(
           src/stm32f4xx_hal_msp.c
           src/stm32f4xx_it.c
           src/fatfs.c
+          src/filesystem_fatfs.c
+          src/common/dirtest.c
           src/usb_host.c
           src/usbh_conf.c
           src/usbd_conf.c
