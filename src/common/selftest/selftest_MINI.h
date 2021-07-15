@@ -2,7 +2,6 @@
 #pragma once
 
 #include <inttypes.h>
-#include "ff.h"
 #include "eeprom.h"
 
 #define SELFTEST_MAX_LOG_PRINTF 128
@@ -109,7 +108,7 @@ protected:
     CSelftestPart_Heater *m_pHeater_Nozzle;
     CSelftestPart_Heater *m_pHeater_Bed;
     FSM_Holder *m_pFSM;
-    FIL m_fil;
+    int m_fd;
     bool m_filIsValid;
     SelftestHomeState_t m_HomeState;
 };
