@@ -769,7 +769,7 @@ void unlock_fs (
 
 static
 FRESULT chk_lock (	/* Check if the file can be accessed */
-	DIR* dp,		/* Directory object pointing the file to be checked */
+	f_DIR* dp,		/* Directory object pointing the file to be checked */
 	int acc			/* Desired access type (0:Read, 1:Write, 2:Delete/Rename) */
 )
 {
@@ -806,7 +806,7 @@ int enq_lock (void)	/* Check if an entry is available for a new object */
 
 static
 UINT inc_lock (	/* Increment object open counter and returns its index (0:Internal error) */
-	DIR* dp,	/* Directory object pointing the file to register or increment */
+	f_DIR* dp,	/* Directory object pointing the file to register or increment */
 	int acc		/* Desired access (0:Read, 1:Write, 2:Delete/Rename) */
 )
 {
@@ -1468,7 +1468,7 @@ DWORD clmt_clust (	/* <2:Error, >=2:Cluster number */
 
 static
 FRESULT dir_sdi (	/* FR_OK(0):succeeded, !=0:error */
-	DIR* dp,		/* Pointer to directory object */
+	f_DIR* dp,		/* Pointer to directory object */
 	DWORD ofs		/* Offset of directory table */
 )
 {
@@ -1517,7 +1517,7 @@ FRESULT dir_sdi (	/* FR_OK(0):succeeded, !=0:error */
 
 static
 FRESULT dir_next (	/* FR_OK(0):succeeded, FR_NO_FILE:End of table, FR_DENIED:Could not stretch */
-	DIR* dp,		/* Pointer to the directory object */
+	f_DIR* dp,		/* Pointer to the directory object */
 	int stretch		/* 0: Do not stretch table, 1: Stretch table if needed */
 )
 {
@@ -1587,7 +1587,7 @@ FRESULT dir_next (	/* FR_OK(0):succeeded, FR_NO_FILE:End of table, FR_DENIED:Cou
 
 static
 FRESULT dir_alloc (	/* FR_OK(0):succeeded, !=0:error */
-	DIR* dp,		/* Pointer to the directory object */
+	f_DIR* dp,		/* Pointer to the directory object */
 	UINT nent		/* Number of contiguous entries to allocate */
 )
 {
@@ -2129,7 +2129,7 @@ void create_xdir (
 
 static
 FRESULT dir_read (
-	DIR* dp,		/* Pointer to the directory object */
+	f_DIR* dp,		/* Pointer to the directory object */
 	int vol			/* Filtered by 0:file/directory or 1:volume label */
 )
 {
@@ -2208,7 +2208,7 @@ FRESULT dir_read (
 
 static
 FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
-	DIR* dp			/* Pointer to the directory object with the file name */
+	f_DIR* dp			/* Pointer to the directory object with the file name */
 )
 {
 	FRESULT res;
@@ -2290,7 +2290,7 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 
 static
 FRESULT dir_register (	/* FR_OK:succeeded, FR_DENIED:no free entry or too many SFN collision, FR_DISK_ERR:disk error */
-	DIR* dp				/* Target directory with object name to be created */
+	f_DIR* dp				/* Target directory with object name to be created */
 )
 {
 	FRESULT res;
@@ -2394,7 +2394,7 @@ FRESULT dir_register (	/* FR_OK:succeeded, FR_DENIED:no free entry or too many S
 
 static
 FRESULT dir_remove (	/* FR_OK:Succeeded, FR_DISK_ERR:A disk error */
-	DIR* dp				/* Directory object pointing the entry to be removed */
+	f_DIR* dp				/* Directory object pointing the entry to be removed */
 )
 {
 	FRESULT res;
@@ -2442,7 +2442,7 @@ FRESULT dir_remove (	/* FR_OK:Succeeded, FR_DISK_ERR:A disk error */
 
 static
 void get_fileinfo (		/* No return code */
-	DIR* dp,			/* Pointer to the directory object */
+	f_DIR* dp,			/* Pointer to the directory object */
 	FILINFO* fno	 	/* Pointer to the file information to be filled */
 )
 {
@@ -2617,7 +2617,7 @@ int pattern_matching (	/* 0:not matched, 1:matched */
 
 static
 FRESULT create_name (	/* FR_OK: successful, FR_INVALID_NAME: could not create */
-	DIR* dp,			/* Pointer to the directory object */
+	f_DIR* dp,			/* Pointer to the directory object */
 	const TCHAR** path	/* Pointer to pointer to the segment in the path string */
 )
 {
@@ -2813,7 +2813,7 @@ FRESULT create_name (	/* FR_OK: successful, FR_INVALID_NAME: could not create */
 
 static
 FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
-	DIR* dp,			/* Directory object to return last directory and found object */
+	f_DIR* dp,			/* Directory object to return last directory and found object */
 	const TCHAR* path	/* Full-path string to find a file or directory */
 )
 {
@@ -3303,7 +3303,7 @@ FRESULT f_open (
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	FATFS *fs;
 #if !_FS_READONLY
 	DWORD dw, cl, bcs, clst, sc;
@@ -3862,7 +3862,7 @@ FRESULT f_chdir (
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	FATFS *fs;
 	DEF_NAMBUF
 
@@ -3915,7 +3915,7 @@ FRESULT f_getcwd (
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	FATFS *fs;
 	UINT i, n;
 	DWORD ccl;
@@ -3980,13 +3980,13 @@ FRESULT f_getcwd (
 }
 
 FRESULT f_getdirpath (
-	DIR* pd,
+	f_DIR* pd,
 	TCHAR* buff,	/* Pointer to the directory path */
 	UINT len		/* Size of path */
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	FATFS *fs;
 	UINT i, n;
 	DWORD ccl;
@@ -4222,7 +4222,7 @@ FRESULT f_lseek (
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_opendir (
-	DIR* dp,			/* Pointer to directory object to create */
+	f_DIR* dp,			/* Pointer to directory object to create */
 	const TCHAR* path	/* Pointer to the directory path */
 )
 {
@@ -4292,7 +4292,7 @@ FRESULT f_opendir (
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_closedir (
-	DIR *dp		/* Pointer to the directory object to be closed */
+	f_DIR *dp		/* Pointer to the directory object to be closed */
 )
 {
 	FRESULT res;
@@ -4325,7 +4325,7 @@ FRESULT f_closedir (
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_readdir (
-	DIR* dp,			/* Pointer to the open directory object */
+	f_DIR* dp,			/* Pointer to the open directory object */
 	FILINFO* fno		/* Pointer to file information to return */
 )
 {
@@ -4361,7 +4361,7 @@ FRESULT f_readdir (
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_findnext (
-	DIR* dp,		/* Pointer to the open directory object */
+	f_DIR* dp,		/* Pointer to the open directory object */
 	FILINFO* fno	/* Pointer to the file information structure */
 )
 {
@@ -4386,7 +4386,7 @@ FRESULT f_findnext (
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_findfirst (
-	DIR* dp,				/* Pointer to the blank directory object */
+	f_DIR* dp,				/* Pointer to the blank directory object */
 	FILINFO* fno,			/* Pointer to the file information structure */
 	const TCHAR* path,		/* Pointer to the directory to open */
 	const TCHAR* pattern	/* Pointer to the matching pattern */
@@ -4418,7 +4418,7 @@ FRESULT f_stat (
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	DEF_NAMBUF
 
 
@@ -4589,7 +4589,7 @@ FRESULT f_unlink (
 )
 {
 	FRESULT res;
-	DIR dj, sdj;
+	f_DIR dj, sdj;
 	DWORD dclst = 0;
 	FATFS *fs;
 #if _FS_EXFAT
@@ -4684,7 +4684,7 @@ FRESULT f_mkdir (
 )
 {
 	FRESULT res;
-	DIR dj;
+	f_DIR dj;
 	FATFS *fs;
 	BYTE *dir;
 	UINT n;
@@ -4782,7 +4782,7 @@ FRESULT f_rename (
 )
 {
 	FRESULT res;
-	DIR djo, djn;
+	f_DIR djo, djn;
 	FATFS *fs;
 	BYTE buf[_FS_EXFAT ? SZDIRE * 2 : 24], *dir;
 	DWORD dw;
@@ -4829,7 +4829,7 @@ FRESULT f_rename (
 #endif
 			{	/* At FAT12/FAT16/FAT32 */
 				mem_cpy(buf, djo.dir + DIR_Attr, 21);	/* Save information about the object except name */
-				mem_cpy(&djn, &djo, sizeof (DIR));		/* Duplicate the directory object */
+				mem_cpy(&djn, &djo, sizeof (f_DIR));		/* Duplicate the directory object */
 				res = follow_path(&djn, path_new);		/* Make sure if new object name is not in use */
 				if (res == FR_OK) {						/* Is new name already in use by any other object? */
 					res = (djn.obj.sclust == djo.obj.sclust && djn.dptr == djo.dptr) ? FR_NO_FILE : FR_EXIST;

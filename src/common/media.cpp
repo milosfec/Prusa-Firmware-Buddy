@@ -164,7 +164,7 @@ public:
     inline const char *LFName() const { return fno.fname; }
 
 private:
-    DIR dp;
+    f_DIR dp;
     FILINFO fno;
     int result;
 };

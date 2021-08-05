@@ -8,6 +8,8 @@
 #include "marlin_client.h"
 #include "translation_provider_FILE.hpp"
 #include "translator.hpp"
+#include <dirent.h>
+#include <sys/types.h>
 
 /*****************************************************************************/
 //MI_VERSION_INFO
@@ -237,17 +239,23 @@ void MI_LOAD_LANG::click(IWindowMenu &windowMenu) {
 
     uint8_t buff[buffLen];
 
-    FILE *srcDir = fopen("/usb/lang/ts.mo", "rb");
-    FILE *dstDir = fopen("/internal/ts.mo", "wb");
-    //copy languague from usb to xflash
-    if (dstDir && srcDir) {
-        for (size_t readBytes = fread(buff, 1, buffLen, srcDir); readBytes != 0; readBytes = fread(buff, 1, buffLen, srcDir)) {
-            fwrite(buff, 1, readBytes, dstDir);
-            //            fflush(dstDir);
-        }
-    }
-    fclose(dstDir);
-    fclose(srcDir);
+    struct stat info {};
+
+    DIR *dir = opendir("/usb");
+
+    stat("./TESTZN~5.GCO", &info);
+
+    //    FILE *srcDir = fopen("/usb/lang/ts.mo", "rb");
+    //    FILE *dstDir = fopen("/internal/ts.mo", "wb");
+    //    //copy languague from usb to xflash
+    //    if (dstDir && srcDir) {
+    //        for (size_t readBytes = fread(buff, 1, buffLen, srcDir); readBytes != 0; readBytes = fread(buff, 1, buffLen, srcDir)) {
+    //            fwrite(buff, 1, readBytes, dstDir);
+    //            //            fflush(dstDir);
+    //        }
+    //    }
+    //    fclose(dstDir);
+    //    fclose(srcDir);
 }
 MI_LANGUAGUE_XFLASH::MI_LANGUAGUE_XFLASH()
     : WI_LABEL_t(_(label), 0, is_enabled_t::yes, is_hidden_t::no) {}

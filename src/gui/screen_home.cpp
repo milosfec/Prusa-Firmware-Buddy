@@ -156,7 +156,7 @@ void screen_home_data_t::windowEvent(EventLock /*has private ctor*/, window_t *s
 }
 
 static bool find_latest_gcode(char *fpath, int fpath_len, char *fname, int fname_len) {
-    DIR dir = { 0 };
+    f_DIR dir = { 0 };
 
     FRESULT result = f_opendir(&dir, "/");
     if (result != FR_OK) {

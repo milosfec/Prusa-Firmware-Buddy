@@ -626,7 +626,9 @@ static int dirnext_r(struct _reent *r, DIR_ITER *dirState, char *filename, struc
         return -1;
     }
 
-    strncpy(filename, fno.fname, NAME_MAX);
+    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
+
+    strlcpy(filename, fname, NAME_MAX);
 
     filestat->st_mode = fno.fattrib & AM_DIR ? S_IFDIR : S_IFREG;
 
@@ -756,7 +758,7 @@ static const devoptab_t devoptab_fatfs = {
     .chdir_r = chdir_r,
     .rename_r = rename_r,
     .mkdir_r = mkdir_r,
-    .dirStateSize = sizeof(DIR),
+    .dirStateSize = sizeof(f_DIR),
     .diropen_r = diropen_r,
     .dirreset_r = dirreset_r,
     .dirnext_r = dirnext_r,

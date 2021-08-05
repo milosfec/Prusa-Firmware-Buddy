@@ -188,7 +188,7 @@ typedef struct {
 #if _USE_FIND
 	const TCHAR* pat;		/* Pointer to the name matching pattern */
 #endif
-} DIR;
+} f_DIR;
 
 
 
@@ -246,11 +246,11 @@ FRESULT f_write (FIL* fp, const void* buff, UINT btw, UINT* bw);	/* Write data t
 FRESULT f_lseek (FIL* fp, FSIZE_t ofs);								/* Move file pointer of the file object */
 FRESULT f_truncate (FIL* fp);										/* Truncate the file */
 FRESULT f_sync (FIL* fp);											/* Flush cached data of the writing file */
-FRESULT f_opendir (DIR* dp, const TCHAR* path);						/* Open a directory */
-FRESULT f_closedir (DIR* dp);										/* Close an open directory */
-FRESULT f_readdir (DIR* dp, FILINFO* fno);							/* Read a directory item */
-FRESULT f_findfirst (DIR* dp, FILINFO* fno, const TCHAR* path, const TCHAR* pattern);	/* Find first file */
-FRESULT f_findnext (DIR* dp, FILINFO* fno);							/* Find next file */
+FRESULT f_opendir (f_DIR* dp, const TCHAR* path);						/* Open a directory */
+FRESULT f_closedir (f_DIR* dp);										/* Close an open directory */
+FRESULT f_readdir (f_DIR* dp, FILINFO* fno);							/* Read a directory item */
+FRESULT f_findfirst (f_DIR* dp, FILINFO* fno, const TCHAR* path, const TCHAR* pattern);	/* Find first file */
+FRESULT f_findnext (f_DIR* dp, FILINFO* fno);							/* Find next file */
 FRESULT f_mkdir (const TCHAR* path);								/* Create a sub directory */
 FRESULT f_unlink (const TCHAR* path);								/* Delete an existing file or directory */
 FRESULT f_rename (const TCHAR* path_old, const TCHAR* path_new);	/* Rename/Move a file or directory */
@@ -260,7 +260,7 @@ FRESULT f_utime (const TCHAR* path, const FILINFO* fno);			/* Change timestamp o
 FRESULT f_chdir (const TCHAR* path);								/* Change current directory */
 FRESULT f_chdrive (const TCHAR* path);								/* Change current drive */
 FRESULT f_getcwd (TCHAR* buff, UINT len);							/* Get current directory */
-FRESULT f_getdirpath (DIR* pd, TCHAR* buff, UINT len);
+FRESULT f_getdirpath (f_DIR* pd, TCHAR* buff, UINT len);
 FRESULT f_getfree (const TCHAR* path, DWORD* nclst, FATFS** fatfs);	/* Get number of free clusters on the drive */
 FRESULT f_getlabel (const TCHAR* path, TCHAR* label, DWORD* vsn);	/* Get volume label */
 FRESULT f_setlabel (const TCHAR* label);							/* Set volume label */

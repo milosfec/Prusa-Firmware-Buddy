@@ -5,13 +5,13 @@
 #include "filesystem.h"
 #include "filesystem_root.h"
 
-#define DIR_INDEX ((DIR *)dirState->dirStruct)->index
+#define DIR_INDEX ((f_DIR *)dirState->dirStruct)->index
 
 int device = -1;
 
 typedef struct {
     int index;
-} DIR;
+} f_DIR;
 
 static DIR_ITER *diropen_r(struct _reent *r, DIR_ITER *dirState, const char *path) {
     if (IS_EMPTY(path)) {
@@ -86,7 +86,7 @@ static const devoptab_t devoptab_root = {
     .chdir_r = NULL,
     .rename_r = NULL,
     .mkdir_r = NULL,
-    .dirStateSize = sizeof(DIR),
+    .dirStateSize = sizeof(f_DIR),
     .diropen_r = diropen_r,
     .dirreset_r = dirreset_r,
     .dirnext_r = dirnext_r,

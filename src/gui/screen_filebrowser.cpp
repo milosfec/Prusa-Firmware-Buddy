@@ -50,8 +50,14 @@ screen_filebrowser_data_t::screen_filebrowser_data_t()
     // ensure null character at the end no matter what
     w_filelist.sfn_path[sizeof(w_filelist.sfn_path) - 1] = '\0';
     // cut by the filename to retain only the directory path
-    char *c = strrchr(w_filelist.sfn_path, '/');
-    *c = 0; // even if we didn't find the '/', c will point to valid memory
+    //    char *c = strrchr(w_filelist.sfn_path, '/');
+    w_filelist.sfn_path[0] = '/';
+    w_filelist.sfn_path[1] = 'u';
+    w_filelist.sfn_path[2] = 's';
+    w_filelist.sfn_path[3] = 'b';
+    w_filelist.sfn_path[4] = 0;
+    char *c = nullptr;
+    //    *c = 0; // even if we didn't find the '/', c will point to valid memory
     // Moreover - the next characters after c contain the filename, which I want to start my cursor at!
     w_filelist.Load(screen_filebrowser_sort, c + 1, firstVisibleSFN);
     // SetItemIndex(1); // this is automatically done in the window file list

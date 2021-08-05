@@ -33,15 +33,16 @@ bool SLine::IsEndThumbnail() const {
         std::min(sizeof(l), sizeof(thumbnailEnd)) - 1);
 }
 
-bool GCodeThumbDecoder::ReadByte(FIL *f, uint8_t &byte) {
-    UINT br = 0;
-    return f_read(f, &byte, 1, &br) == FR_OK && br == 1;
+bool GCodeThumbDecoder::ReadByte(FILE *f, uint8_t &byte) {
+    //    UINT br = 0;
+    //        return f_read(f, &byte, 1, &br) == FR_OK && br == 1;
+    return fread(&byte, 1, 1, f) == 1;
 }
 
-bool GCodeThumbDecoder::ReadLine(FIL *f, SLine &line) {
+bool GCodeThumbDecoder::ReadLine(FILE *f, SLine &line) {
     uint8_t byte;
     for (;;) {
-        if (f_eof(f) || !ReadByte(f, byte))
+        if (feof(f) || !ReadByte(f, byte))
             return false;
         if (byte == '\n')
             break;
@@ -68,7 +69,7 @@ bool GCodeThumbDecoder::AppendBase64Chars(
     return true;
 }
 
-int GCodeThumbDecoder::Read(FIL *f, char *pc, int n) {
+int GCodeThumbDecoder::Read(FILE *f, char *pc, int n) {
     static const size_t MAX_READ_LINES = 2048; // treba 2K radek
     switch (state) {
     case States::Searching: {

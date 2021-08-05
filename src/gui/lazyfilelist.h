@@ -2,10 +2,14 @@
 #include <memory>
 #include <iterator>
 #include <algorithm>
-#include "fatfs.h"
+//#include "fatfs.h"
 #include <string.h>
 #include <limits.h>
 #include <array>
+#include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifndef LAZYFILELIST_UNITTEST
     #include "file_list_defs.h"
@@ -41,6 +45,11 @@ public:
         BY_NAME,
         BY_CRMOD_DATETIME ///< Sort by combined Creation and Modification time stamp.
                           ///< Expects support in FATfs - to return the most recent time stamp from both of them
+    };
+
+    struct fileInfo {
+        dirent *fno;
+        struct stat info;
     };
 
     LazyDirView() {
@@ -88,6 +97,7 @@ public:
         size_t filesInWindow = 0; // number of files populated in the window - less than WINDOW_SIZE when there are less files in the dir
         Clear();
         sortPolicy = sp;
+        //        strlcpy(sfnPath, p, sizeof(sfnPath));
         strlcpy(sfnPath, p, sizeof(sfnPath));
         if (!firstDirEntry) {
             files[0].SetDirUp(); // this is always the first (zeroth) one
@@ -101,7 +111,7 @@ public:
                 files[0].SetDirUp();
                 windowStartingFrom = -1;
             } else {
-                files[0].CopyFrom(dir.fno);
+                files[0].CopyFrom(dir.infoStruct);
                 // windowStartsFrom will be fine tuned later during iteration over the whole dir content
                 // And the dir must closed here, because the search cycle uses a different search pattern
             }
@@ -130,19 +140,19 @@ public:
             // Find the right stop to insert the file/entry - a normal binary search algorithm
             // Searching is done from the first (not zeroth) index, because the zeroth must be kept intact - that's the start of our window
             // Impl. detail: cannot use auto, need the write iterator (non const)
-            typename decltype(files)::iterator i = std::upper_bound(files.begin() + 1, files.begin() + filesInWindow, dir.fno, LessFE);
+            typename decltype(files)::iterator i = std::upper_bound(files.begin() + 1, files.begin() + filesInWindow, dir.infoStruct, LessFE);
             if (i != files.end()) {
-                if (i == files.begin() + 1 && LessFE(dir.fno, files[0])) {
+                if (i == files.begin() + 1 && LessFE(dir.infoStruct, files[0])) {
                     // The file entry could have been inserted outside of the window - i.e. before the first item, which is to be unmovable
                     // However, if it is less than the zeroth entry, we must increment windowStartsFrom
                     ++windowStartingFrom;
                 } else {
-                    if (strcmp(files[0].lfn, dir.fno.fname) != 0) {
+                    if (strcmp(files[0].lfn, dir.infoStruct.fno->d_name) != 0) {
                         // i.e. we didn't get the same entry as the zeroth entry (which may occur when populating the window with non-null firstDirEntry)
                         // Make place in the window by standard item rotation downwards (to the right)
                         std::rotate(files.rbegin(), files.rbegin() + 1, make_reverse_iterator(i)); // solves also the case, when there are less files in the window
                         // Save the entry
-                        i->CopyFrom(dir.fno);
+                        i->CopyFrom(dir.infoStruct);
                         if (filesInWindow < WINDOW_SIZE) {
                             ++filesInWindow;
                         }
@@ -175,9 +185,9 @@ public:
         // prepare the item at the zeroth position according to sort policy
         files[0] = MakeFirstEntry();
         while (dir.FindNext()) {
-            if (LessEF(files[0], dir.fno) && LessFE(dir.fno, files[1])) {
+            if (LessEF(files[0], dir.infoStruct) && LessFE(dir.infoStruct, files[1])) {
                 // to be inserted, the entry must be greater than zeroth entry AND less than the first entry
-                files[0].CopyFrom(dir.fno);
+                files[0].CopyFrom(dir.infoStruct);
             }
         }
         --windowStartingFrom;
@@ -196,9 +206,9 @@ public:
         // prepare the last item according to sort policy
         files[WINDOW_SIZE - 1] = MakeLastEntry();
         while (dir.FindNext()) {
-            if (LessFE(dir.fno, files[WINDOW_SIZE - 1]) && LessEF(files[WINDOW_SIZE - 2], dir.fno)) {
+            if (LessFE(dir.infoStruct, files[WINDOW_SIZE - 1]) && LessEF(files[WINDOW_SIZE - 2], dir.infoStruct)) {
                 // to be inserted, the entry must be greater than the pre-last entry AND less than the last entry
-                files[WINDOW_SIZE - 1].CopyFrom(dir.fno);
+                files[WINDOW_SIZE - 1].CopyFrom(dir.infoStruct);
             }
         }
         ++windowStartingFrom;
@@ -213,12 +223,12 @@ private:
         bool isFile;
         char lfn[_MAX_LFN];
         char sfn[LazyDirView::MAX_SFN]; // cache the short filenames too, since they will be used in communication with Marlin
-        uint16_t date, time;
+        time_t time;
         void Clear() {
             isFile = false;
             lfn[0] = 0;
             sfn[0] = 0;
-            date = time = 0;
+            time = 0;
         }
         void ReplaceNonAsciiChars(size_t charsCopied) {
             for (char *p = lfn; p != lfn + charsCopied; ++p) {
@@ -227,30 +237,37 @@ private:
                 }
             }
         }
-        void CopyFrom(const FILINFO &fno) {
-            size_t charsCopied = strlcpy(lfn, fno.fname, sizeof(lfn));
-            if (fno.altname[0] == 0) { // the lfn is identical to sfn
-                strlcpy(sfn, lfn, sizeof(sfn));
-            } else {
-                strlcpy(sfn, fno.altname, sizeof(sfn));
-            }
+        void CopyFrom(const fileInfo &fno) {
+            //            size_t charsCopied = strlcpy(lfn, fno->d_name, sizeof(lfn));
+            //            if (fno.altname[0] == 0) { // the lfn is identical to sfn
+            //                strlcpy(sfn, lfn, sizeof(sfn));
+            //            } else {
+            //                strlcpy(sfn, fno.altname, sizeof(sfn));
+            //            }
+            //@@TODO create function to get lfn from FATfs
+            strlcpy(sfn, fno.fno->d_name, sizeof(sfn));
+            strlcpy(lfn, fno.fno->d_name, sizeof(sfn));
             // Safety precautions - remove all non-ascii characters from the LFN, which are not in range <32-127>
             // and replace them with a placeholder - in our case a '*'
             // @@TODO beware: if someone deliberately makes 2 filenames differing only in one non-ascii character,
             // this may break the whole file sorting - because both filenames will have a '*' at that index,
             // i.e. the file names will not be unique. In such a case the list of files may be incomplete or work
             // incorrectly. But remember - we do not support diacritics in filenames AT ALL.
-            ReplaceNonAsciiChars(charsCopied);
+            //            ReplaceNonAsciiChars(charsCopied);
 
-            isFile = (fno.fattrib & AM_DIR) == 0;
-            date = fno.fdate;
-            time = fno.ftime;
+            isFile = (fno.fno->d_type & DT_DIR) == 0;
+            if (isFile) {
+                struct stat info {};
+                stat(fno.fno->d_name, &info);
+
+                time = fno.info.st_mtime;
+            }
         }
         void SetDirUp() {
             lfn[0] = lfn[1] = sfn[0] = sfn[1] = '.';
             lfn[2] = sfn[2] = 0;
             isFile = false;
-            date = time = UINT16_MAX;
+            time = UINT16_MAX;
         }
     };
 
@@ -263,50 +280,61 @@ private:
 
     /// Current selected sort policy compare functions
     /// Could have been some std::function or some other advanced c++ method, but KISS ;)
-    bool (*LessEF)(const Entry &, const FILINFO &);
-    bool (*LessFE)(const FILINFO &, const Entry &);
+    bool (*LessEF)(const Entry &, const fileInfo &);
+    bool (*LessFE)(const fileInfo &, const Entry &);
     Entry (*MakeFirstEntry)();
     Entry (*MakeLastEntry)();
 
     /// This is just a simple RAII struct for finding one particular file/dir name using FATfs tools
     /// and closing the control structures accordingly
     struct F_DIR_RAII_Find_One {
-        DIR dp;
-        FILINFO fno;
+        DIR *dp;
+        fileInfo infoStruct;
         int result;
-        F_DIR_RAII_Find_One(const char *sfnPath, const char *sfn) {
+        F_DIR_RAII_Find_One(char *sfnPath, const char *sfn) {
             // this would have been easy if the f_findfirst was working with SFN
             //result = f_findfirst(&dp, &fno, path, pattern);
             // the following code was modified from FATfs
             result = FR_NO_FILE;
-            if ((result = f_opendir(&dp, sfnPath)) == FR_OK) {
+            dp = opendir(sfnPath);
+            if (dp) {
                 for (;;) {
-                    result = f_readdir(&dp, &fno); // get a directory item
-                    if (result != FR_OK || !fno.fname[0]) {
+                    infoStruct.fno = readdir(dp); // get a directory item
+                    if (!infoStruct.fno) {
                         result = FR_NO_FILE; // make sure we report some meaningful error (unlike FATfs)
                         break;
                     }
                     // select appropriate file name
-                    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
-                    if (!strcmp(sfn, fname)) {
+                    //                    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
+                    if (!strcmp(sfn, infoStruct.fno->d_name)) {
+                        result = FR_OK;
+                        size_t len = strlen(sfnPath);
+                        if (len < FILE_PATH_MAX_LEN) {
+                            sfnPath[len] = '/';
+                            strlcpy(sfnPath + len + 1, infoStruct.fno->d_name, FILE_PATH_MAX_LEN - len - 1);
+                            stat(sfnPath, &infoStruct.info);
+                            memset(sfnPath + len, 0, FILE_PATH_MAX_LEN - len);
+                        }
                         break; // found the SFN searched for
                     }
                 }
             }
         }
         ~F_DIR_RAII_Find_One() {
-            f_closedir(&dp);
+            closedir(dp);
         }
     };
 
     /// RAII iterator structure over a directory with file/entry matching
     /// tailored for our purposes
     struct F_DIR_RAII_Iterator {
-        DIR dp;
-        FILINFO fno;
+        DIR *dp;
+        fileInfo infoStruct;
         int result;
-        F_DIR_RAII_Iterator(const char *path) {
-            result = f_opendir(&dp, path);
+        char *m_Path;
+        F_DIR_RAII_Iterator(char *path)
+            : m_Path(path) {
+            dp = opendir(path);
         }
 
         static bool FnameMatchesPattern(const char *fname) {
@@ -332,12 +360,19 @@ private:
         bool FindNext() {
             // f_find_next internally calls only f_readdir
             // and it only does pattern matching, which I don't need here - I have my own
-            while ((result = f_readdir(&dp, &fno)) == FR_OK) {
+            while ((infoStruct.fno = readdir(dp)) != nullptr) {
                 // idiotic API of f_readdir and f_findnext - it returns FR_OK even when there are no more files
-                if (fno.fname[0] == 0) {
-                    return false;
-                }
+                //                if (fno.fname[0] == 0) {
+                //                    return false;
+                //                }
                 if (EntryAccepted()) {
+                    size_t len = strlen(m_Path);
+                    if (len < FILE_PATH_MAX_LEN) {
+                        m_Path[len] = '/';
+                        strlcpy(m_Path + len + 1, infoStruct.fno->d_name, FILE_PATH_MAX_LEN - len - 1);
+                        stat(m_Path, &infoStruct.info);
+                        memset(m_Path + len, 0, FILE_PATH_MAX_LEN - len);
+                    }
                     return true; // found and accepted
                 }
             }
@@ -345,19 +380,19 @@ private:
         }
 
         bool EntryAccepted() const {
-            if ((fno.fattrib & (AM_SYS | AM_HID)) != 0) {
-                return false; // system and hidden files/directories are not accepted
-            }
-            if ((fno.fattrib & AM_DIR) != 0) {
+            //            if ((fno->d_type & (AM_SYS | AM_HID)) != 0) {
+            //                return false; // system and hidden files/directories are not accepted
+            //            }
+            if ((infoStruct.fno->d_type & DT_DIR) != 0) {
                 return true; // all normal directories are accepted
             }
             // files are being filtered by their extension
             // this is vastly less code than generic patter_matching from FATFS
-            return FnameMatchesPattern(fno.fname);
+            return FnameMatchesPattern(infoStruct.fno->d_name);
         }
 
         ~F_DIR_RAII_Iterator() {
-            f_closedir(&dp);
+            closedir(dp);
         }
     };
 
@@ -373,25 +408,25 @@ private:
     // These function must not be named the same, otherwise one would have to explicitely
     // specify the correct one in the upper_bound algoritm which looks horrible :)
     // Using std::tie to avoid errors in comparison of a heterogenous sequence of components
-    static bool LessByFNameEF(const Entry &e, const FILINFO &fno) {
-        string_view_light fnoName(fno.fname);
+    static bool LessByFNameEF(const Entry &e, const fileInfo &info) {
+        string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        bool fnoIsFile = (fno.fattrib & AM_DIR) == 0;
+        bool fnoIsFile = (info.fno->d_type & DT_REG) != 0;
         return std::tie(e.isFile, eName) < std::tie(fnoIsFile, fnoName);
     }
-    static bool LessByFNameFE(const FILINFO &fno, const Entry &e) {
-        string_view_light fnoName(fno.fname);
+    static bool LessByFNameFE(const fileInfo &info, const Entry &e) {
+        string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        bool fnoIsFile = (fno.fattrib & AM_DIR) == 0;
+        bool fnoIsFile = (info.fno->d_type & DT_REG) != 0;
         return std::tie(fnoIsFile, fnoName) < std::tie(e.isFile, eName);
     }
 
     static Entry MakeFirstEntryByFName() {
-        static const Entry e = { false, "", "", 0U, 0U };
+        static const Entry e = { false, "", "", 0U };
         return e;
     }
     static Entry MakeLastEntryByFName() {
-        Entry e = { true, "", "", 0xffff, 0xffff };
+        Entry e = { true, "", "", 0xffff };
         std::fill(e.lfn, e.lfn + sizeof(e.lfn) - 1, 0xff);
         e.lfn[sizeof(e.lfn) - 1] = 0;
         return e;
@@ -400,24 +435,25 @@ private:
     // is less than an older time stamp - we want the newer files up higher in the list.
     // Therefore the condition must be inverted including the comparison sequence parameter meaning
     // -> directories first and then the most recent files
-    static bool LessByTimeEF(const Entry &e, const FILINFO &fno) {
-        bool fnoIsDir = (fno.fattrib & AM_DIR) != 0;
+    static bool LessByTimeEF(const Entry &e, const fileInfo &info) {
+        bool fnoIsDir = (info.fno->d_type & DT_DIR) != 0;
         bool eIsDir = !e.isFile;
         // beware - multiple files may have identical time stamps!
         // In such case, the file name is the only unique identifier and thus must be included in the comparison
-        string_view_light fnoName(fno.fname);
+        string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        return std::tie(fnoIsDir, fno.fdate, fno.ftime, fnoName) < std::tie(eIsDir, e.date, e.time, eName);
+        return std::tie(fnoIsDir, info.info.st_mtime, fnoName) < std::tie(eIsDir, e.time, eName);
     }
-    static bool LessByTimeFE(const FILINFO &fno, const Entry &e) {
-        bool fnoIsDir = (fno.fattrib & AM_DIR) != 0;
+    static bool LessByTimeFE(const fileInfo &info, const Entry &e) {
+        bool fnoIsDir = (info.fno->d_type & DT_DIR) != 0;
         bool eIsDir = !e.isFile;
-        string_view_light fnoName(fno.fname);
+        string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        return std::tie(eIsDir, e.date, e.time, eName) < std::tie(fnoIsDir, fno.fdate, fno.ftime, fnoName);
+        bool res = std::tie(eIsDir, e.time, eName) < std::tie(fnoIsDir, info.info.st_mtime, fnoName);
+        return res;
     }
     static Entry MakeFirstEntryByTime() {
-        Entry e = { false, "", "", 0xffff, 0xffff };
+        Entry e = { false, "", "", 0xffff };
         std::fill(e.lfn, e.lfn + sizeof(e.lfn) - 1, 0xff);
         e.lfn[sizeof(e.lfn) - 1] = 0;
         // since the sfn is not used for comparison anywhere in LazyDirView,
@@ -427,7 +463,7 @@ private:
         return e;
     }
     static Entry MakeLastEntryByTime() {
-        static const Entry e = { true, "", "", 0U, 0U };
+        static const Entry e = { true, "", "", 0U };
         return e;
     }
 
