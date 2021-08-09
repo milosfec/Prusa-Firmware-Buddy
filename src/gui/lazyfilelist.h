@@ -238,29 +238,28 @@ private:
             }
         }
         void CopyFrom(const fileInfo &fno) {
-            //            size_t charsCopied = strlcpy(lfn, fno->d_name, sizeof(lfn));
-            //            if (fno.altname[0] == 0) { // the lfn is identical to sfn
-            //                strlcpy(sfn, lfn, sizeof(sfn));
-            //            } else {
-            //                strlcpy(sfn, fno.altname, sizeof(sfn));
-            //            }
-            //@@TODO create function to get lfn from FATfs
-            strlcpy(sfn, fno.fno->d_name, sizeof(sfn));
-            strlcpy(lfn, fno.fno->d_name, sizeof(sfn));
+            size_t charsCopied = strlcpy(lfn, fno.fno->d_name, sizeof(lfn));
+            if (fno.fno->sfn == 0) { // the lfn is identical to sfn
+                strlcpy(sfn, lfn, sizeof(sfn));
+            } else {
+                strlcpy(sfn, fno.fno->sfn, sizeof(sfn));
+            }
+            //            //@@TODO create function to get lfn from FATfs
+            //            strlcpy(sfn, fno.fno->d_name, sizeof(sfn));
+            //            strlcpy(lfn, fno.fno->d_name, sizeof(sfn));
             // Safety precautions - remove all non-ascii characters from the LFN, which are not in range <32-127>
             // and replace them with a placeholder - in our case a '*'
             // @@TODO beware: if someone deliberately makes 2 filenames differing only in one non-ascii character,
             // this may break the whole file sorting - because both filenames will have a '*' at that index,
             // i.e. the file names will not be unique. In such a case the list of files may be incomplete or work
             // incorrectly. But remember - we do not support diacritics in filenames AT ALL.
+            // 9. 8. 2021
+            //not needed anymore non-ascii characters are replaced with "?" by fix in FAT fs
             //            ReplaceNonAsciiChars(charsCopied);
 
             isFile = (fno.fno->d_type & DT_DIR) == 0;
             if (isFile) {
-                struct stat info {};
-                stat(fno.fno->d_name, &info);
-
-                time = fno.info.st_mtime;
+                time = fno.fno->time;
             }
         }
         void SetDirUp() {
@@ -304,15 +303,14 @@ private:
                         result = FR_NO_FILE; // make sure we report some meaningful error (unlike FATfs)
                         break;
                     }
-                    // select appropriate file name
-                    //                    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
-                    if (!strcmp(sfn, infoStruct.fno->d_name)) {
+                    //                     select appropriate file name
+                    const char *fname = infoStruct.fno->sfn[0] ? infoStruct.fno->sfn : infoStruct.fno->d_name;
+                    if (!strcmp(sfn, fname)) {
                         result = FR_OK;
                         size_t len = strlen(sfnPath);
                         if (len < FILE_PATH_MAX_LEN) {
                             sfnPath[len] = '/';
                             strlcpy(sfnPath + len + 1, infoStruct.fno->d_name, FILE_PATH_MAX_LEN - len - 1);
-                            stat(sfnPath, &infoStruct.info);
                             memset(sfnPath + len, 0, FILE_PATH_MAX_LEN - len);
                         }
                         break; // found the SFN searched for
@@ -361,18 +359,7 @@ private:
             // f_find_next internally calls only f_readdir
             // and it only does pattern matching, which I don't need here - I have my own
             while ((infoStruct.fno = readdir(dp)) != nullptr) {
-                // idiotic API of f_readdir and f_findnext - it returns FR_OK even when there are no more files
-                //                if (fno.fname[0] == 0) {
-                //                    return false;
-                //                }
                 if (EntryAccepted()) {
-                    size_t len = strlen(m_Path);
-                    if (len < FILE_PATH_MAX_LEN) {
-                        m_Path[len] = '/';
-                        strlcpy(m_Path + len + 1, infoStruct.fno->d_name, FILE_PATH_MAX_LEN - len - 1);
-                        stat(m_Path, &infoStruct.info);
-                        memset(m_Path + len, 0, FILE_PATH_MAX_LEN - len);
-                    }
                     return true; // found and accepted
                 }
             }
@@ -442,14 +429,14 @@ private:
         // In such case, the file name is the only unique identifier and thus must be included in the comparison
         string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        return std::tie(fnoIsDir, info.info.st_mtime, fnoName) < std::tie(eIsDir, e.time, eName);
+        return std::tie(fnoIsDir, info.fno->time, fnoName) < std::tie(eIsDir, e.time, eName);
     }
     static bool LessByTimeFE(const fileInfo &info, const Entry &e) {
         bool fnoIsDir = (info.fno->d_type & DT_DIR) != 0;
         bool eIsDir = !e.isFile;
         string_view_light fnoName(info.fno->d_name);
         string_view_light eName(e.lfn);
-        bool res = std::tie(eIsDir, e.time, eName) < std::tie(fnoIsDir, info.info.st_mtime, fnoName);
+        bool res = std::tie(eIsDir, e.time, eName) < std::tie(fnoIsDir, info.fno->time, fnoName);
         return res;
     }
     static Entry MakeFirstEntryByTime() {

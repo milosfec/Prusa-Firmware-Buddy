@@ -26,6 +26,8 @@ extern "C" {
 		ino_t	d_ino;
 		unsigned char  d_type;
 		char	d_name[NAME_MAX+1];
+                char    sfn[13];
+                time_t  time;
 	};
 
 	typedef struct {

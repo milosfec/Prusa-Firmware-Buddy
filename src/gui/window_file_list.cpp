@@ -21,7 +21,7 @@
 #endif
 
 bool window_file_list_t::IsPathRoot(const char *path) {
-    return (path[0] == 0 || strcmp(path, "/") == 0);
+    return (path[0] == 0 || strcmp(path, "/usb") == 0);
 }
 
 void window_file_list_t::Load(WF_Sort_t sort, const char *sfnAtCursor, const char *topSFN) {

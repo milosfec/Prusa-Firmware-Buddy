@@ -626,11 +626,18 @@ static int dirnext_r(struct _reent *r, DIR_ITER *dirState, char *filename, struc
         return -1;
     }
 
-    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
+    //    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
+    strlcpy(filename, fno.fname, NAME_MAX);
 
-    strlcpy(filename, fname, NAME_MAX);
+    //this file has lfn
+    if (fno.altname[0] != 0) {
+        strlcpy(filestat->sfn, fno.altname, sizeof(filestat->sfn));
+    } else {
+        fno.altname[0] = 0;
+    }
 
     filestat->st_mode = fno.fattrib & AM_DIR ? S_IFDIR : S_IFREG;
+    filestat->st_mtime = get_posix_time(fno.fdate, fno.ftime);
 
     return 0;
 }

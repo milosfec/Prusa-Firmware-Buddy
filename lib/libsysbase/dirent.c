@@ -163,8 +163,10 @@ struct dirent* readdir (DIR *dirp) {
 	}
 
 	strncpy (dirp->fileData.d_name, filename, sizeof(dirp->fileData.d_name));
+    strncpy(dirp->fileData.sfn,st.sfn,sizeof(st.sfn));
 	dirp->fileData.d_ino = st.st_ino;
 	dirp->fileData.d_type = S_ISDIR(st.st_mode)?DT_DIR:DT_REG;
+    dirp->fileData.time=st.st_mtime;
 
 	return &(dirp->fileData);
 }

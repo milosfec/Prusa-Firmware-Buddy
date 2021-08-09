@@ -56,8 +56,8 @@ GCodeInfo::GCodeInfo()
 
 void GCodeInfo::initFile(GI_INIT_t init) {
     deinitFile();
-    //    memset(&file, 1, sizeof(FIL));
-    if (!gcode_file_path || (file = fopen(gcode_file_path, "r")) != nullptr) {
+    //    memset(file, 1, sizeof(FILE));
+    if (!gcode_file_path || (file = fopen(gcode_file_path, "r")) == nullptr) {
         return;
     }
     file_opened = true;
