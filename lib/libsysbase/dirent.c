@@ -162,11 +162,16 @@ struct dirent* readdir (DIR *dirp) {
 		return NULL;
 	}
 
-	strncpy (dirp->fileData.d_name, filename, sizeof(dirp->fileData.d_name));
-    strncpy(dirp->fileData.sfn,st.sfn,sizeof(st.sfn));
+	uint8_t charsCopied = strlcpy(dirp->fileData.d_name, filename, sizeof(dirp->fileData.d_name)); //yes I want to fill rest of the buffer with "0"
+        if(filename[charsCopied + 1]==1){
+            strlcpy(dirp->fileData.d_name + charsCopied + 2, filename + charsCopied + 2 , sizeof(dirp->fileData.d_name));
+            dirp->fileData.lfn = dirp->fileData.d_name + charsCopied + 2;
+        }else {
+            dirp->fileData.lfn = dirp->fileData.d_name;
+        }
 	dirp->fileData.d_ino = st.st_ino;
 	dirp->fileData.d_type = S_ISDIR(st.st_mode)?DT_DIR:DT_REG;
-    dirp->fileData.time=st.st_mtime;
+        dirp->fileData.time=st.st_mtime;
 
 	return &(dirp->fileData);
 }

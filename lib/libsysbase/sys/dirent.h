@@ -26,7 +26,7 @@ extern "C" {
 		ino_t	d_ino;
 		unsigned char  d_type;
 		char	d_name[NAME_MAX+1];
-                char    sfn[13];
+                char   * lfn;
                 time_t  time;
 	};
 
