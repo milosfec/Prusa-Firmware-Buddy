@@ -429,8 +429,8 @@ static int dirnext_r(struct _reent *r, DIR_ITER *dirState, char *filename, struc
         return dirnext_r(r, dirState, filename, filestat);
     }
 
-    strncpy(filename, info.name, NAME_MAX);
-
+    uint8_t charsCopied = strlcpy(filename, info.name, NAME_MAX);
+    filename[charsCopied + 1] = 0; //set flag that lfn is not set
     return 0;
 }
 

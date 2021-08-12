@@ -626,14 +626,14 @@ static int dirnext_r(struct _reent *r, DIR_ITER *dirState, char *filename, struc
         return -1;
     }
 
-    //    const char *fname = fno.altname[0] ? fno.altname : fno.fname;
-    strlcpy(filename, fno.fname, NAME_MAX);
-
-    //this file has lfn
     if (fno.altname[0] != 0) {
-        strlcpy(filestat->sfn, fno.altname, sizeof(filestat->sfn));
+        uint8_t charsCopied = strlcpy(filename, fno.altname, sizeof(fno.altname)); //yes I want to fill rest of the buffer with "0"
+        filename[charsCopied + 1] = 1;                                             //set flag, that lfn is set
+        //filename is 256 chars long (NAME_MAX) so 13 + 105 chars is shorter and it will fit inside
+        strlcpy(filename + charsCopied + 2, fno.fname, sizeof(fno.fname));
     } else {
-        fno.altname[0] = 0;
+        uint8_t charsCopied = strlcpy(filename, fno.fname, sizeof(fno.fname)); //yes I want to fill rest of the buffer with "0"
+        filename[charsCopied + 1] = 0;                                         //set flag, that lfn is not set
     }
 
     filestat->st_mode = fno.fattrib & AM_DIR ? S_IFDIR : S_IFREG;

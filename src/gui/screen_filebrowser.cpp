@@ -30,7 +30,7 @@ WF_Sort_t screen_filebrowser_sort = WF_SORT_BY_TIME;
 /// This is something else than the selected file for print
 /// This is used to restore the content of the browser into previous state including the layout
 constexpr unsigned int SFN_len = 13;
-static char firstVisibleSFN[SFN_len] = "";
+static char firstVisibleSFN[SFN_len];
 
 screen_filebrowser_data_t::screen_filebrowser_data_t()
     : AddSuperWindow<screen_t>()
@@ -130,11 +130,8 @@ void screen_filebrowser_data_t::windowEvent(EventLock /*has private ctor*/, wind
     } else { // print the file
         if (vars->media_LFN && vars->media_SFN_path) {
             int written;
-            if (window_file_list_t::IsPathRoot(w_filelist.sfn_path)) {
-                written = snprintf(vars->media_SFN_path, FILE_PATH_MAX_LEN, "/%s", currentSFN);
-            } else {
-                written = snprintf(vars->media_SFN_path, FILE_PATH_MAX_LEN, "%s/%s", w_filelist.sfn_path, currentSFN);
-            }
+            //@@TODO:check for "/" on last place of path and if yes do not add "/"
+            written = snprintf(vars->media_SFN_path, FILE_PATH_MAX_LEN, "%s/%s", w_filelist.sfn_path, currentSFN);
             if (written < 0 || written >= (int)FILE_PATH_MAX_LEN) {
                 LOG_ERROR("failed to prepare file path for print");
                 SuperWindowEvent(sender, event, param);
